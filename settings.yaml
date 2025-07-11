@@ -1,0 +1,15 @@
+general:
+  app_title: ':chart_with_upwards_trend: HALO Metadata Analyzer'
+  page_icon: ':chart_with_upwards_trend:'
+  analysis_hesitation_row_limit_value: 1000
+  analysis_hesitation_row_limit_step: 100
+
+
+get_lazyframe_info:
+  preview_size: 300
+  num_unique_perc: 5
+  max_num_multiselect_options: 100
+
+
+get_filtered_lazyframe_info:
+  preview_size: 300
