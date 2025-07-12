@@ -6,7 +6,6 @@ RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
 # Clone the repo.
 RUN git clone https://github.com/andrew-weisman/halo-metadata-viewer-docker-testing.git /app
-RUN cat /app/requirements.txt
 
 # Set the working directory.
 WORKDIR /app
@@ -23,6 +22,8 @@ CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0
 
 # To build the Docker image, run:
 # docker build -t halo-metadata-viewer .
+# OR (if e.g. dependencies in requirements.txt have changed):
+# docker build --no-cache -t halo-metadata-viewer .
 
 # To run the Docker container, run:
 # docker run -p 8501:8501 halo-metadata-viewer
