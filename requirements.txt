@@ -8,3 +8,4 @@ shap==0.48.0
 streamlit==1.46.1
 PyYAML==6.0.2
 openpyxl==3.1.5
+fastexcel==0.14.0
