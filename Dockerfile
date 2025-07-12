@@ -5,7 +5,7 @@ FROM python:3.12-slim
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
 # Clone the repo.
-RUN git clone git@github.com:andrew-weisman/halo-metadata-viewer-docker-testing.git /app
+RUN git clone https://github.com/andrew-weisman/halo-metadata-viewer-docker-testing.git /app
 
 # Set the working directory.
 WORKDIR /app
