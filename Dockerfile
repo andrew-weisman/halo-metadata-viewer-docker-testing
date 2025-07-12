@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
 # Clone the repo.
 RUN git clone https://github.com/andrew-weisman/halo-metadata-viewer-docker-testing.git /app
+RUN cat /app/requirements.txt
 
 # Set the working directory.
 WORKDIR /app
