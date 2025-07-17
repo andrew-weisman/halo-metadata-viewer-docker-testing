@@ -522,7 +522,7 @@ def generate_filter_widgets(filter_dict, full_column_options, filtering_columns,
     for column in filtering_columns:
 
         # Display the column name as a subheader.
-        st.subheader(column)
+        st.markdown(f"<h3 style='color: orange;'>{column}</h3>", unsafe_allow_html=True)
 
         # If the column is a string column, display a text box for the filtering string.
         if column in string_columns:

@@ -30,6 +30,9 @@ def repeat_modeling_results_plot(data_for_repeat_modeling_plots, repeat_modeling
 # Main function.
 def main():
 
+    # Page information.
+    st.write("This page allows you to visualize the performance of the machine learning models that you previously generated. All plots are for informational purposes only; there are no required steps on this page. (:zero: steps total.)")
+
     # Load the modeling data.
     if st_key_prefix_perform_modeling + 'actually_used_settings_for_perform_modeling_button' not in st.session_state:
         st.warning('No modeling data found. Please perform modeling.')
@@ -39,60 +42,91 @@ def main():
     data_for_repeat_modeling_plots = st.session_state[f'{st_key_prefix_perform_modeling}data_for_repeat_modeling_plots']
 
     # Make two main columns.
-    main_columns = st.columns(2)
+    tab_per_model_type, tab_all_model_types = st.tabs(['Metrics per model type', 'Metrics for all model types'])
 
     # In the first column, place the two per-model plots.
-    with main_columns[0]:
+    with tab_per_model_type:
 
-        # Write a header.
-        st.header('Per model type')
+        # Make plots take up only half the width.
+        tab_per_model_type_columns = st.columns(2)
+        with tab_per_model_type_columns[0]:
 
-        # Extract the available model types.
-        model_types = data_for_repeat_modeling_plots['R^2 score']['columns'][1]
+            # Extract the available model types.
+            model_types = data_for_repeat_modeling_plots['R^2 score']['columns'][1]
 
-        # Create columns for model selection widgets.
-        widget_columns = st.columns(3, vertical_alignment='bottom')
+            # Create columns for model selection widgets.
+            widget_columns = st.columns(3, vertical_alignment='bottom')
 
-        # In the first column, create a selectbox.
-        with widget_columns[0]:
-            key = st_key_prefix + 'model_type'
-            if (key not in st.session_state) or (st.session_state[key] not in model_types):
-                st.session_state[key] = model_types[0]
-            model_type = st.selectbox(
-                label="Select model type:",
-                options=model_types,
+            # In the first column, create a selectbox.
+            with widget_columns[0]:
+                key = st_key_prefix + 'model_type'
+                if (key not in st.session_state) or (st.session_state[key] not in model_types):
+                    st.session_state[key] = model_types[0]
+                model_type = st.selectbox(
+                    label="Select model type:",
+                    options=model_types,
+                    key=key,
+                    help="Select the model type to visualize.",
+                )
+
+            # In the second column, create a Previous button.
+            with widget_columns[1]:
+                st.button('Previous model type', use_container_width=True, on_click=(lambda: st.session_state.update({(st_key_prefix + 'model_type'): model_types[model_types.index(st.session_state[st_key_prefix + 'model_type']) - 1]})), disabled=(model_types.index(st.session_state[key]) == 0))
+
+            # In the third column, create a Next button.
+            with widget_columns[2]:
+                st.button('Next model type', use_container_width=True, on_click=(lambda: st.session_state.update({(st_key_prefix + 'model_type'): model_types[model_types.index(st.session_state[st_key_prefix + 'model_type']) + 1]})), disabled=(model_types.index(st.session_state[key]) == (len(model_types) - 1)))
+
+            # Obtain the actual metric used for the repeat modeling.
+            actual_metric = st.session_state[f'{st_key_prefix_perform_modeling}actually_used_settings_for_perform_modeling_button']['metric']
+
+            # Allow the user to choose which plot to display.
+            per_model_type_plot_options = ['Metric for different dataset types', 'Mean squared error decomposition']
+            key = st_key_prefix + 'per_model_type_plot_choice'
+            if key not in st.session_state:
+                st.session_state[key] = per_model_type_plot_options[0]
+            per_model_type_plot_choice = st.radio(
+                label="Select plot to display:",
+                options=per_model_type_plot_options,
+                horizontal=False,
+                help="Select which plot to display for the selected model type.",
                 key=key,
-                help="Select the model type to visualize.",
             )
 
-        # In the second column, create a Previous button.
-        with widget_columns[1]:
-            st.button('Previous model type', use_container_width=True, on_click=(lambda: st.session_state.update({(st_key_prefix + 'model_type'): model_types[model_types.index(st.session_state[st_key_prefix + 'model_type']) - 1]})), disabled=(model_types.index(st.session_state[key]) == 0))
+            # Draw the R^2 plot for a selected plot type.
+            if per_model_type_plot_choice == per_model_type_plot_options[0]:
+                repeat_modeling_results_plot(data_for_repeat_modeling_plots, repeat_modeling_results='R^2 score', title_suffix=f' for {model_type} and actual metric {actual_metric}', dims=[0, 1, 3, 2], last_axis_index=model_types.index(model_type))
 
-        # In the third column, create a Next button.
-        with widget_columns[2]:
-            st.button('Next model type', use_container_width=True, on_click=(lambda: st.session_state.update({(st_key_prefix + 'model_type'): model_types[model_types.index(st.session_state[st_key_prefix + 'model_type']) + 1]})), disabled=(model_types.index(st.session_state[key]) == (len(model_types) - 1)))
-
-        # Obtain the actual metric used for the repeat modeling.
-        actual_metric = st.session_state[f'{st_key_prefix_perform_modeling}actually_used_settings_for_perform_modeling_button']['metric']
-
-        # Draw the R^2 plot for a selected plot type.
-        repeat_modeling_results_plot(data_for_repeat_modeling_plots, repeat_modeling_results='R^2 score', title_suffix=f' for {model_type} and actual metric {actual_metric}', dims=[0, 1, 3, 2], last_axis_index=model_types.index(model_type))
-
-        # Draw the ensemble mean squared error decomposition plot for a selected model type.
-        repeat_modeling_results_plot(data_for_repeat_modeling_plots, repeat_modeling_results='Ensemble mean squared error decomposition', title_suffix=f' for {model_type}', dims=[0, 1, 3, 2], last_axis_index=model_types.index(model_type))
+            # Draw the ensemble mean squared error decomposition plot for a selected model type.
+            elif per_model_type_plot_choice == per_model_type_plot_options[1]:
+                repeat_modeling_results_plot(data_for_repeat_modeling_plots, repeat_modeling_results='Ensemble mean squared error decomposition', title_suffix=f' for {model_type}', dims=[0, 1, 3, 2], last_axis_index=model_types.index(model_type))
 
     # In the second column, place the two all-model plots.
-    with main_columns[1]:
+    with tab_all_model_types:
 
-        # Write a header.
-        st.header('All model types')
+        # Make plots take up only half the width.
+        tab_all_model_types_columns = st.columns(2)
+        with tab_all_model_types_columns[0]:
 
-        # Draw the ensemble R^2 score plot for a selected model type.
-        repeat_modeling_results_plot(data_for_repeat_modeling_plots, repeat_modeling_results='Ensemble R^2 score', title_suffix=f' for actual metric {actual_metric}')
+            # Allow the user to choose which plot to display.
+            all_model_types_plot_options = ['Metric for all model types', 'sqrt(MSE) for all model types']
+            key = st_key_prefix + 'all_model_types_plot_choice'
+            if key not in st.session_state:
+                st.session_state[key] = all_model_types_plot_options[0]
+            all_model_types_plot_choice = st.radio(
+                label="Select plot to display:",
+                options=all_model_types_plot_options,
+                horizontal=False,
+                key=key,
+            )
 
-        # Draw the ensemble error plot for a selected model type.
-        repeat_modeling_results_plot(data_for_repeat_modeling_plots, repeat_modeling_results='Ensemble error')
+            # Draw the ensemble R^2 score plot for a selected model type.
+            if all_model_types_plot_choice == all_model_types_plot_options[0]:
+                repeat_modeling_results_plot(data_for_repeat_modeling_plots, repeat_modeling_results='Ensemble R^2 score', title_suffix=f' for actual metric {actual_metric}')
+
+            # Draw the ensemble error plot for a selected model type.
+            elif all_model_types_plot_choice == all_model_types_plot_options[1]:
+                repeat_modeling_results_plot(data_for_repeat_modeling_plots, repeat_modeling_results='Ensemble error')
 
 
 # Run the main function.

@@ -46,13 +46,13 @@ def pinned_dataset_loading():
     key = st_key_prefix + 'pinned_dataset_name'
     if key not in st.session_state:
         st.session_state[key] = available_pinned_datasets[0] if available_pinned_datasets else None
-    pinned_dataset_name = st.selectbox('Select pinned dataset:', options=available_pinned_datasets, key=key)
+    pinned_dataset_name = st.selectbox(':a: Select registered dataset...', options=available_pinned_datasets, key=key)
 
     # Load the selected pinned dataset.
     key = st_key_prefix + 'actually_used_settings_for_load_pinned_dataset_button'
     button_columns = st.columns(2)
     with button_columns[0]:
-        if st.button(':arrows_counterclockwise: Load pinned dataset', use_container_width=True, on_click=pdl.conditionally_reset_session_state, args=('pinned',), disabled=(pinned_dataset_name is None)):
+        if st.button(':arrows_counterclockwise: Load registered dataset', use_container_width=True, on_click=pdl.conditionally_reset_session_state, args=('pinned',), disabled=(pinned_dataset_name is None)):
             load_pinned_dataset_settings = {
                 'pinned_dataset_name': pinned_dataset_name,
                 'preview_size': st.session_state[f'{st_key_prefix_app}app_settings']['get_lazyframe_info']['preview_size'],
@@ -63,7 +63,7 @@ def pinned_dataset_loading():
             load_pinned_dataset(**load_pinned_dataset_settings)
     current_settings = str(st.session_state[key]) if key in st.session_state else None
     with button_columns[1]:
-        with st.popover('Currently loaded pinned data', use_container_width=True):
+        with st.popover('Currently loaded registered data', use_container_width=True):
             st.write(current_settings)
 
 
@@ -71,7 +71,7 @@ def pinned_dataset_loading():
 def uploaded_dataset_loading():
 
     # Upload a dataset.
-    uploaded_dataset = st.file_uploader('Upload dataset:', type=['csv', 'xls', 'xlsx'])
+    uploaded_dataset = st.file_uploader('... OR, :b: Upload dataset:', type=['csv', 'xls', 'xlsx'])
     if uploaded_dataset is not None:
         uploaded_dataset_name = uploaded_dataset.name
     else:
@@ -105,18 +105,18 @@ def save_frame_for_analysis(lf, frame_type_to_use, filter_dict, loaded_dataset_n
     elif dataframe_generating_mechanism == 'From memory':
         frame = pdl.generate_frame_of_certain_type(*args_tuple)
         st.session_state[st_key_prefix + 'filtered_frame'] = frame
-    st.success('Data registered for analysis.')
+    st.success('Data registered for analysis. Please proceed to the next page.')
 
 
 # Filtering UI functionality. I had separated it out to here because I was temporarily decorating with st.fragment.
 def filtering(lazyframe_info, loaded_dataset_name, lf):
 
     # Set up main columns.
-    main_cols = st.columns([1/4, 3/4], border=True)
+    main_cols = st.columns([1/3, 2/3], border=True)
 
     # In the first column, set up the filtering options.
     with main_cols[0]:
-        st.header('Filters')
+        st.header(':two: Filter the data')
 
         # Get shortcuts to the columns in the dataset.
         string_columns = lazyframe_info['column_types']['string']
@@ -142,7 +142,6 @@ def filtering(lazyframe_info, loaded_dataset_name, lf):
         st.header('Filtered dataset')
 
         # Output the filtered dataset properties.
-        st.subheader('Properties')
         filtered_lazyframe_info = pdl.get_filtered_lazyframe_info(
             st.session_state[f'{st_key_prefix_polars_data_loading}filter_dict'],
             loaded_dataset_name,
@@ -150,13 +149,14 @@ def filtering(lazyframe_info, loaded_dataset_name, lf):
             preview_size=st.session_state[f'{st_key_prefix_app}app_settings']['get_filtered_lazyframe_info']['preview_size']
             )
         st.markdown(f'''
+                    Properties:
                     - Rows: `{filtered_lazyframe_info['shape'][0]:,}`
                     - Columns: `{filtered_lazyframe_info['shape'][1]:,}`
                     ''')
         
         # Output the filtered dataset preview.
-        st.subheader('Preview')
-        st.write(filtered_lazyframe_info['df_preview'])
+        with st.expander('Preview:', expanded=False):
+            st.write(filtered_lazyframe_info['df_preview'])
 
         # Set a row limit at which to hesitate running downstream analysis.
         key = st_key_prefix + 'row_limit_to_hesitate'
@@ -166,7 +166,8 @@ def filtering(lazyframe_info, loaded_dataset_name, lf):
             'Row limit at which to hesitate registering the filtered data for analysis:',
             min_value=0,
             step=st.session_state[f'{st_key_prefix_app}app_settings']['general']['analysis_hesitation_row_limit_step'],
-            key=key
+            key=key,
+            help="If the number of rows in the filtered dataset exceeds this limit, you'll be asked to confirm that you want to register the data for analysis. You likely don't want to run analysis on a huge dataset!",
             )
 
         # If the number of rows in the filtered dataset exceeds the limit, warn the user and ask if they really want to proceed with downstream analysis.
@@ -184,23 +185,25 @@ def filtering(lazyframe_info, loaded_dataset_name, lf):
             return
 
         # Header for downstream analysis.
-        st.subheader('Data registration for analysis')
+        st.subheader(':three: Register filtered data for analysis')
 
         # Allow user to select which frame type to use: polars dataframe or lazyframe.
         key = st_key_prefix + 'frame_type_to_use'
         if key not in st.session_state:
             st.session_state[key] = 'Eager'
-        frame_type_to_use = st.radio('Frame type to use:', ['Eager', 'Lazy', 'Pandas'], key=key)
+        # frame_type_to_use = st.radio('Frame type to use:', ['Eager', 'Lazy', 'Pandas'], key=key)
+        frame_type_to_use = st.session_state[key]
 
         # Allow the user to select whether they want the resulting dataframe from the dataset itself or from memory.
         key = st_key_prefix + 'dataframe_generating_mechanism'
         if key not in st.session_state:
             st.session_state[key] = 'From memory'
-        dataframe_generating_mechanism = st.radio('Mechanism for generating frame:', ['From dataset', 'From memory'], key=key)
+        # dataframe_generating_mechanism = st.radio('Mechanism for generating frame:', ['From dataset', 'From memory'], key=key)
+        dataframe_generating_mechanism = st.session_state[key]
 
         # Return the dataframe using the desired mechanism.
         key = st_key_prefix + 'actually_used_settings_for_save_frame_for_analysis_button'
-        if st.button('Save frame for analysis'):
+        if st.button('Save frame for analysis', type="primary"):
             save_frame_for_analysis_settings = {
                 'frame_type_to_use': frame_type_to_use,
                 'filter_dict': copy.deepcopy(st.session_state[f'{st_key_prefix_polars_data_loading}filter_dict']),
@@ -217,41 +220,43 @@ def filtering(lazyframe_info, loaded_dataset_name, lf):
 # Main function definition.
 def main():
 
-    # Data loading.
-    with st.expander('Dataset (collapse to hide):', expanded=True):
-        data_loading_cols = st.columns([1/4, 3/4])
+    # Page information.
+    st.write("This page allows you to load a dataset and filter it down to the rows containing the data that you wish to model. (:three: steps total.)")
 
-        # Data loading options.
-        with data_loading_cols[0]:
-            st.header('Data loading options')
+    # Data loading options.
+    data_loading_cols = st.columns([1/3, 2/3], border=True)
+    with data_loading_cols[0]:
+        st.header(':one: Load data')
 
-            # Functionality to load a pinned dataset.
-            pinned_dataset_loading()
+        # Functionality to load a pinned dataset.
+        pinned_dataset_loading()
 
-            # Functionality to upload a dataset.
-            uploaded_dataset_loading()
+        # Functionality to upload a dataset.
+        uploaded_dataset_loading()
 
-            # Ensure data have been loaded.
-            if st_key_prefix + 'lf' not in st.session_state:
-                st.warning('Please load a pinned dataset or upload one.')
-                return
+        # Ensure data have been loaded.
+        if st_key_prefix + 'lf' not in st.session_state:
+            st.warning('Please load a registered dataset or upload one.')
+            return
 
-            # Retrieve the selected dataset.
-            lf = st.session_state[st_key_prefix + 'lf']
-            lazyframe_info = st.session_state[st_key_prefix + 'lazyframe_info']
-            loaded_dataset_name = st.session_state[st_key_prefix + 'loaded_dataset_name']  # Remember loaded_dataset_name will have " (pinned)" or " (uploaded)" appended to it so no need to change this variable name. Also, this helps to elucidate which data is actually loaded, including whether it is pinned or uploaded.
+        # Retrieve the selected dataset.
+        lf = st.session_state[st_key_prefix + 'lf']
+        lazyframe_info = st.session_state[st_key_prefix + 'lazyframe_info']
+        loaded_dataset_name = st.session_state[st_key_prefix + 'loaded_dataset_name']  # Remember loaded_dataset_name will have " (pinned)" or " (uploaded)" appended to it so no need to change this variable name. Also, this helps to elucidate which data is actually loaded, including whether it is pinned or uploaded.
 
-            # Display the loaded dataset properties.
-            st.markdown(f'''
-                        Loaded dataset properties:
-                        - Name: `{loaded_dataset_name}`
-                        - Rows: `{lazyframe_info['shape'][0]:,}`
-                        - Columns: `{lazyframe_info['shape'][1]:,}`
-                        ''')
-            
+    with data_loading_cols[1]:
+        st.header('Loaded dataset')
+
+        # Display the loaded dataset properties.
+        st.markdown(f'''
+                    Properties:
+                    - Name: `{loaded_dataset_name}`
+                    - Rows: `{lazyframe_info['shape'][0]:,}`
+                    - Columns: `{lazyframe_info['shape'][1]:,}`
+                    ''')
+        
         # Dataset preview.
-        with data_loading_cols[1]:
-            st.header('Loaded data preview')
+        with st.expander('Preview:', expanded=False):
             st.write(lazyframe_info['df_preview'])
 
     # Run the "Filters" and "Filtered dataset" sections. Running as a fragment to avoid modifying anything that is logically prior such as the sorting of the columns in the loaded dataset preview.

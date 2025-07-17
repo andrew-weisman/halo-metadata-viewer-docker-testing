@@ -10,7 +10,7 @@ st_key_prefix = 'select_model.py__'
 st_key_prefix_perform_modeling = 'perform_modeling.py__'
 
 
-# Get the best model type corresponding to the model types and number of component models and the repeitition whose ensemble R^2 score is closest to the highest mean ensemble R^2 score.
+# Get the best model type corresponding to the model types and number of component models and the repetition whose ensemble R^2 score is closest to the highest mean ensemble R^2 score.
 def set_best_model_repetition(data_for_repeat_modeling_plots):
 
     # Get the means of the ensemble R^2 scores and the columns corresponding to its indices. Also get the array of the ensemble R^2 scores for all repetitions.
@@ -67,13 +67,14 @@ def select_repeat_ensemble_model():
 
     # Output the ensemble R^2 score for the selected model type, number of component models, and repetition.
     ensemble_r2_score = data_for_repeat_modeling_plots['Ensemble R^2 score']['All repetitions'][repetition_num, repetition_nums_models.index(repetition_num_models), repetition_model_types.index(repetition_model_type)]
-    st.write(f'R^2 score for selected ensemble model: {ensemble_r2_score:.3f}')
+    r2_score = f'R^2 score for ensemble model: {ensemble_r2_score:.3f}'
+    st.markdown(f"<h6 style='color: orange;'>{r2_score}</h6>", unsafe_allow_html=True)
 
     # Have a button that auto-chooses the best model type, number of component models, and repetition based on the ensemble R^2 scores.
-    st.button('Auto-choose best settings', key=st_key_prefix + 'repeat_modeling_auto_select_button', on_click=set_best_model_repetition, help='Select the best model type, number of component models, and repetition based on the ensemble R^2 scores.', args=(data_for_repeat_modeling_plots,))
+    st.button('Auto-choose best settings', key=st_key_prefix + 'repeat_modeling_auto_select_button', on_click=set_best_model_repetition, args=(data_for_repeat_modeling_plots,), help="Automatically choose the model type and number of component models with the highest mean R^2 score, and choose the particular repetition whose score is closest to this highest mean score, i.e., a \"representative\" repetition.")
 
     # Choose the selected ensemble model for analysis.
-    st.button('Select model for analysis', key=st_key_prefix + 'repeat_modeling_select_model_for_analysis_button', on_click=lambda: st.session_state.update({
+    st.button(':one: Select model for analysis', key=st_key_prefix + 'repeat_modeling_select_model_for_analysis_button', on_click=lambda: st.session_state.update({
         st_key_prefix + 'chosen_ensemble_model_for_analysis': model_fitting_results['repetitions_list'][repetition_num][repetition_num_models][repetition_model_type],
         st_key_prefix + 'train_test_generalization_indices': model_fitting_results['train_test_generalization_indices'][repetition_num],
         st_key_prefix + 'actually_used_settings_for_select_model_for_analysis_button': {
@@ -81,7 +82,7 @@ def select_repeat_ensemble_model():
             'repetition_num_models': repetition_num_models,
             'repetition_model_type': repetition_model_type,
             'model_fitting_results': copy.deepcopy(st.session_state[st_key_prefix_perform_modeling + 'actually_used_settings_for_perform_modeling_button']),
-        }}), help='Select the ensemble model for analysis.')
+        }}), help='Select the ensemble model for downstream analysis.')
 
 
 # # Define a function to highlight the row where the index matches the target value.
@@ -91,6 +92,9 @@ def select_repeat_ensemble_model():
 
 # Main function.
 def main():
+
+    # Page information.
+    st.write("This page allows you to select which model to use for downstream analysis on subsequent pages. During the modeling phase, one ensemble was generated for each model type and number of component models in the ensemble, and this was repeated multiple times to evaluate the dependence on data splitting. So here, you must select (1) which model type to use, (2) which number of component models to use, and (3) which repetition to use. This can be done automatically (recommended) or manually. (:one: step total.)")
 
     # Check if modeling has been performed.
     if not st_key_prefix_perform_modeling + 'actually_used_settings_for_perform_modeling_button' in st.session_state:
@@ -104,10 +108,10 @@ def main():
     with main_columns[0]:
         select_repeat_ensemble_model()
 
-    # Check if the user has selected an (repeat) ensemble model for analysis.
-    if st_key_prefix + 'actually_used_settings_for_select_model_for_analysis_button' not in st.session_state:
-        st.info('Please select a model for analysis.')
-        return
+        # Check if the user has selected an (repeat) ensemble model for analysis.
+        if st_key_prefix + 'actually_used_settings_for_select_model_for_analysis_button' not in st.session_state:
+            st.info('Please select a model for downstream analysis.')
+            return
     
     # Get the metrics for all the model types but otherwise as selected via repetition and number of component models.
     chosen_model = st.session_state[st_key_prefix + 'chosen_ensemble_model_for_analysis']
@@ -120,17 +124,19 @@ def main():
     ser_ensemble_models = pd.DataFrame({key: value for key, value in chosen_model.items() if key not in keys_to_exclude})
 
     # Display the summary for each model with the selected row highlighted.
-    st.write(ser_ensemble_models)
+    with st.expander('View metrics for each component of the selected ensemble model:', expanded=False):
+        st.write(ser_ensemble_models)
 
     # Display a plotly histogram of the ensemble residuals while allowing the user to select the number of bins.
-    with st.columns(2)[0]:
-        key = st_key_prefix + 'histogram_ensemble_residuals_num_bins'
-        if key not in st.session_state:
-            st.session_state[key] = 20
-        num_bins = st.slider('Number of bins for histogram of ensemble residuals:', min_value=5, max_value=100, step=5, key=key)
-    df_residuals = pd.DataFrame({'Ensemble residuals': chosen_model['Ensemble residuals']})
-    fig = plotting.plot_ensemble_residuals_histogram(df_residuals, num_bins=num_bins)
-    st.plotly_chart(fig, use_container_width=True)
+    with st.expander('View histogram of the ensemble model errors (residuals):', expanded=False):
+        with st.columns(2)[0]:
+            key = st_key_prefix + 'histogram_ensemble_residuals_num_bins'
+            if key not in st.session_state:
+                st.session_state[key] = 20
+            num_bins = st.slider('Number of bins for histogram of ensemble residuals:', min_value=5, max_value=100, step=5, key=key)
+        df_residuals = pd.DataFrame({'Ensemble residuals': chosen_model['Ensemble residuals']})
+        fig = plotting.plot_ensemble_residuals_histogram(df_residuals, num_bins=num_bins)
+        st.plotly_chart(fig, use_container_width=True)
 
 
 # Run the main function.

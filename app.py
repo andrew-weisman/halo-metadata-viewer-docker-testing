@@ -19,12 +19,12 @@ def main():
     pg = st.navigation(
         {
             "Pages": [
-                st.Page(load_and_filter_data.main, title="Load and filter data", default=True, url_path='load_and_filter_data'),
-                st.Page(perform_modeling.main, title="Perform modeling", url_path='perform_modeling'),
-                st.Page(visualize_model_metrics.main, title="Visualize model metrics", url_path='visualize_model_metrics'),
-                st.Page(select_model.main, title="Select model", url_path='select_model'),
-                st.Page(study_feature_importance.main, title="Study feature importance", url_path='study_feature_importance'),
-                st.Page(predict_on_new_data.main, title="Predict on new data", url_path='predict_on_new_data'),
+                st.Page(load_and_filter_data.main, title="🔍 Load and filter data", default=True, url_path='load_and_filter_data'),
+                st.Page(perform_modeling.main, title="🧠 Perform modeling", url_path='perform_modeling'),
+                st.Page(visualize_model_metrics.main, title="📊 Visualize model metrics", url_path='visualize_model_metrics'),
+                st.Page(select_model.main, title="🎯 Select model", url_path='select_model'),
+                st.Page(study_feature_importance.main, title="🧬 Study feature importance", url_path='study_feature_importance'),
+                st.Page(predict_on_new_data.main, title="🔮 Predict on new data", url_path='predict_on_new_data'),
                 ],
         }
     )
@@ -52,8 +52,11 @@ def main():
         layout='wide'
         )
     
+    # Display the CBIIT logo.
+    st.logo("cbiit_logo_color2.png", size="large", link="https://datascience.cancer.gov")
+    
     # Display the title of the page.
-    st.title(app_title + ' - ' + pg.title)
+    st.title(app_title + ': ' + pg.title)
 
     # Display the page.
     pg.run()

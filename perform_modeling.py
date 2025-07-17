@@ -33,7 +33,7 @@ def perform_modeling(df_to_analyze, models_to_run, independent_vars, dependent_v
         st.session_state[st_key_prefix + 'data_for_repeat_modeling_plots'] = data_for_plots
 
         # Output a success message.
-        st.success("Modeling completed successfully.")
+        st.success("Modeling completed successfully. Please proceed to the next page.")
 
     # Otherwise, output an error message.
     else:
@@ -154,6 +154,9 @@ def execute_perform_modeling_button(models_to_run, independent_vars, dependent_v
 # Main function.
 def main():
 
+    # Page information.
+    st.write("This page allows you to generate and evaluate machine learning models relating selected independent variable(s) to a dependent variable. Variables correspond to columns in the dataset and can be either numeric or categorical. Currently, the dependent variable must be numeric (so this is a regression problem). Hyperparameter optimization is performed using preset hyperparameter grids. Final models are averaging ensembles of a specified number of component models. (:one: step total.)")
+
     # Load the filtered data for downstream analysis.
     filtered_data = load_filtered_data()
     if filtered_data is None:
@@ -165,7 +168,7 @@ def main():
     multiselect_columns = filtered_data["multiselect_columns"]
 
     # Filtered data section.
-    with st.expander('Filtered data:', expanded=True):
+    with st.expander('Filtered data preview:', expanded=False):
 
         # Display the dataframe to analyze.
         st.write(df_to_analyze)
@@ -183,7 +186,7 @@ def main():
         with st.columns(1, border=True)[0]:
 
             # Write a section header.
-            st.header('Modeling Settings')
+            st.header(':one: Perform modeling')
 
             # Allow the user to select the independent variable(s).
             key = st_key_prefix + 'independent_vars'
@@ -192,16 +195,16 @@ def main():
             independent_vars = st.multiselect('Select independent variable(s):', options=column_choices, key=key)
 
             # Allow the user to automatically add all columns that are not the dependent variable (if present) and that have no null values.
-            with st.expander('Kitchen sink options:', expanded=False):
+            with st.expander('"Kitchen sink" options:', expanded=False):
                 st.button("Numeric kitchen sink", help="Add all numeric columns that are not the dependent variable (if selected) and that have no null values.", on_click=kitchen_sink, kwargs=dict(df=df_to_analyze, numeric_columns=numeric_columns, multiselect_columns=multiselect_columns, consider_numeric=True, consider_multiselect=False), use_container_width=True)
-                st.button("Multiselect kitchen sink", help="Add all multiselect columns that are not the dependent variable (if selected), that have no null values, and that have more than one unique value.", on_click=kitchen_sink, kwargs=dict(df=df_to_analyze, numeric_columns=numeric_columns, multiselect_columns=multiselect_columns, consider_numeric=False, consider_multiselect=True), use_container_width=True)
-                st.button("Entire kitchen sink", help="Add all numeric and multiselect columns that are not the dependent variable (if selected), that have no null values, and that have more than one unique value (if a multiselect column type).", on_click=kitchen_sink, kwargs=dict(df=df_to_analyze, numeric_columns=numeric_columns, multiselect_columns=multiselect_columns, consider_numeric=True, consider_multiselect=True), use_container_width=True)
+                st.button("Categorical kitchen sink", help="Add all categorical columns that are not the dependent variable (if selected), that have no null values, and that have more than one unique value.", on_click=kitchen_sink, kwargs=dict(df=df_to_analyze, numeric_columns=numeric_columns, multiselect_columns=multiselect_columns, consider_numeric=False, consider_multiselect=True), use_container_width=True)
+                st.button("Entire kitchen sink", help="Add all numeric and categorical columns that are not the dependent variable (if selected), that have no null values, and that have more than one unique value (if a categorical column type).", on_click=kitchen_sink, kwargs=dict(df=df_to_analyze, numeric_columns=numeric_columns, multiselect_columns=multiselect_columns, consider_numeric=True, consider_multiselect=True), use_container_width=True)
 
             # Allow the user to select the dependent variable.
             key = st_key_prefix + 'dependent_var'
             if key not in st.session_state:
                 st.session_state[key] = None
-            dependent_var = st.selectbox('Select dependent variable:', options=column_choices, key=key)
+            dependent_var = st.selectbox('Select dependent variable:', options=numeric_columns, key=key)
 
             # Determine whether both independent and dependent variables have been set.
             variables_are_specified = independent_vars and dependent_var
@@ -225,7 +228,7 @@ def main():
             key = st_key_prefix + 'apply_pca'
             if key not in st.session_state:
                 st.session_state[key] = False
-            apply_pca = st.checkbox("Apply PCA to reduce multicollinearity?", key=key, disabled=not ready_to_fit)
+            apply_pca = st.checkbox("Apply principal components analysis (PCA) to reduce multicollinearity?", key=key, disabled=not ready_to_fit)
 
             # Allow the user to specify the number of PCA components.
             key = st_key_prefix + 'num_pca_components'
@@ -237,19 +240,19 @@ def main():
             key = st_key_prefix + 'generalization_holdout_frac'
             if key not in st.session_state:
                 st.session_state[key] = 0.2
-            generalization_holdout_frac = st.number_input("Fraction of dataset to use for the generalization holdout set:", min_value=0.0, max_value=1.0, step=0.01, key=key, disabled=not ready_to_fit)
+            generalization_holdout_frac = st.number_input("Fraction of dataset to use for the generalization holdout set:", min_value=0.0, max_value=1.0, step=0.01, key=key, disabled=not ready_to_fit, help="Model ensemble is *evaluated* on this fraction of the filtered dataset. Training is performed on the remaining data.")
 
             # Allow the user to specify whether they want to specify the seed for the generalization split.
             key = st_key_prefix + 'set_random_state_generalization_seed'
             if key not in st.session_state:
                 st.session_state[key] = False
-            set_random_state_generalization_seed = st.checkbox("Set random state for the generalization split?", key=key, disabled=not ready_to_fit)
+            set_random_state_generalization_seed = st.checkbox("Set random seed for the generalization split?", key=key, disabled=not ready_to_fit)
 
             # Allow the user to specify the random state for the generalization split.
             key = st_key_prefix + 'random_state_generalization_split'
             if key not in st.session_state:
                 st.session_state[key] = 42
-            random_state_generalization_split = st.number_input("Random state for the generalization split:", min_value=0, step=1, key=key, disabled=(not ready_to_fit) or (not set_random_state_generalization_seed))
+            random_state_generalization_split = st.number_input("Random seed for the generalization split:", min_value=0, step=1, key=key, disabled=(not ready_to_fit) or (not set_random_state_generalization_seed))
 
             # Set the random state for the generalization split.
             if not set_random_state_generalization_seed:
@@ -259,13 +262,13 @@ def main():
             key = st_key_prefix + 'num_inner_cv_splits'
             if key not in st.session_state:
                 st.session_state[key] = 5
-            num_inner_cv_splits = st.number_input("Number of cross-validation folds:", min_value=2, step=1, key=key, disabled=not ready_to_fit)
+            num_inner_cv_splits = st.number_input("Number of cross-validation folds for hyperparameter optimization (HPO):", min_value=2, step=1, key=key, disabled=not ready_to_fit)
 
             # Allow the user to specify the number of jobs to use for the grid search.
             key = st_key_prefix + 'num_jobs_for_gridsearchcv'
             if key not in st.session_state:
                 st.session_state[key] = -1
-            num_jobs_for_gridsearchcv = st.number_input("Number of jobs for grid search (negative for all available):", min_value=-1, step=1, key=key, disabled=not ready_to_fit)
+            num_jobs_for_gridsearchcv = st.number_input("Number of jobs for HPO (negative for all available):", min_value=-1, step=1, key=key, disabled=not ready_to_fit)
 
             # Allow the user to specify the metric to use not for the grid search (which is currently fixed as r2) but rather for the model evaluations separate from the grid search.
             key = st_key_prefix + 'metric'
@@ -277,13 +280,13 @@ def main():
             key = st_key_prefix + 'num_models_list_string'
             if key not in st.session_state:
                 st.session_state[key] = '[1, 2, 3, 4, 5, 10]'
-            num_models_list_string = st.text_input("Numbers of models to ensemble (list of integers):", key=key, disabled=not ready_to_fit)
+            num_models_list_string = st.text_input("Numbers of component models to ensemble (list of integers):", key=key, disabled=not ready_to_fit, help="This allows you to develop ensemble models consisting of different numbers of component models. E.g., [1, 3, 5] will generate three ensemble models: one with one component model (i.e., no ensembling), one with three component models, and one with five component models.")
 
             # Allow the user to specify the number of repetitions for the modeling.
             key = st_key_prefix + 'num_repetitions'
             if key not in st.session_state:
                 st.session_state[key] = 1
-            num_repetitions = st.number_input("Number of modeling repetitions:", min_value=1, step=1, key=key, disabled=not ready_to_fit)
+            num_repetitions = st.number_input("Number of times to repeat the modeling:", min_value=1, step=1, key=key, disabled=not ready_to_fit, help="If no seed is set for the generalization split (recommended), then each run will split the filtered dataset into training and generalization sets differently each time. This will result in different models and performance metrics. So repeating the modeling (with no seed set) allows you to observe the variability in model performance due to random data splitting.")
 
             # Evaluate the ensembles for all numbers of models and repetitions.
             key = st_key_prefix + 'actually_used_settings_for_perform_modeling_button'

@@ -246,7 +246,7 @@ def plot_predictions_with_error_bars(
         title=title,
         xaxis_title=xaxis_title or x_col,
         yaxis_title=yaxis_title,
-        legend_title="Prediction Method",
+        legend_title="Prediction method:",
         xaxis=dict(
             tickmode='array' if is_categorical else 'auto',
             tickvals=x_tickvals if is_categorical else None,
