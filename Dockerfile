@@ -28,4 +28,8 @@ CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0
 # To run the Docker container, run:
 # docker run -p 8501:8501 halo-metadata-viewer
 
+# To update the tagged image (to ensure the push works) and push to Docker Hub (https://hub.docker.com/r/andrewweisman/halo-metadata-viewer) do, e.g.:
+# docker tag 8d33b67455c7 andrewweisman/halo-metadata-viewer:latest
+# docker push andrewweisman/halo-metadata-viewer
+
 # Then, open a web browser and go to http://localhost:8501 to see the app.

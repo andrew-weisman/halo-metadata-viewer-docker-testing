@@ -224,40 +224,42 @@ def main():
     st.write("This page allows you to load a dataset and filter it down to the rows containing the data that you wish to model. (:three: steps total.)")
 
     # Data loading options.
-    data_loading_cols = st.columns([1/3, 2/3], border=True)
+    data_loading_cols = st.columns([1/3, 2/3], border=False)
     with data_loading_cols[0]:
-        st.header(':one: Load data')
+        with st.columns(1, border=True)[0]:
+            st.header(':one: Load data')
 
-        # Functionality to load a pinned dataset.
-        pinned_dataset_loading()
+            # Functionality to load a pinned dataset.
+            pinned_dataset_loading()
 
-        # Functionality to upload a dataset.
-        uploaded_dataset_loading()
+            # Functionality to upload a dataset.
+            uploaded_dataset_loading()
 
-        # Ensure data have been loaded.
-        if st_key_prefix + 'lf' not in st.session_state:
-            st.warning('Please load a registered dataset or upload one.')
-            return
+            # Ensure data have been loaded.
+            if st_key_prefix + 'lf' not in st.session_state:
+                st.warning('Please load a registered dataset or upload one.')
+                return
 
-        # Retrieve the selected dataset.
-        lf = st.session_state[st_key_prefix + 'lf']
-        lazyframe_info = st.session_state[st_key_prefix + 'lazyframe_info']
-        loaded_dataset_name = st.session_state[st_key_prefix + 'loaded_dataset_name']  # Remember loaded_dataset_name will have " (pinned)" or " (uploaded)" appended to it so no need to change this variable name. Also, this helps to elucidate which data is actually loaded, including whether it is pinned or uploaded.
+            # Retrieve the selected dataset.
+            lf = st.session_state[st_key_prefix + 'lf']
+            lazyframe_info = st.session_state[st_key_prefix + 'lazyframe_info']
+            loaded_dataset_name = st.session_state[st_key_prefix + 'loaded_dataset_name']  # Remember loaded_dataset_name will have " (pinned)" or " (uploaded)" appended to it so no need to change this variable name. Also, this helps to elucidate which data is actually loaded, including whether it is pinned or uploaded.
 
     with data_loading_cols[1]:
-        st.header('Loaded dataset')
+        with st.columns(1, border=True)[0]:
+            st.header('Loaded dataset')
 
-        # Display the loaded dataset properties.
-        st.markdown(f'''
-                    Properties:
-                    - Name: `{loaded_dataset_name}`
-                    - Rows: `{lazyframe_info['shape'][0]:,}`
-                    - Columns: `{lazyframe_info['shape'][1]:,}`
-                    ''')
-        
-        # Dataset preview.
-        with st.expander('Preview:', expanded=False):
-            st.write(lazyframe_info['df_preview'])
+            # Display the loaded dataset properties.
+            st.markdown(f'''
+                        Properties:
+                        - Name: `{loaded_dataset_name}`
+                        - Rows: `{lazyframe_info['shape'][0]:,}`
+                        - Columns: `{lazyframe_info['shape'][1]:,}`
+                        ''')
+            
+            # Dataset preview.
+            with st.expander('Preview:', expanded=False):
+                st.write(lazyframe_info['df_preview'])
 
     # Run the "Filters" and "Filtered dataset" sections. Running as a fragment to avoid modifying anything that is logically prior such as the sorting of the columns in the loaded dataset preview.
     filtering(lazyframe_info, loaded_dataset_name, lf)
